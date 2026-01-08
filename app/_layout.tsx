@@ -30,6 +30,20 @@ export default function RootLayout() {
             headerShown: true,
           }} 
         />
+        <Stack.Screen 
+          name="camera" 
+          options={{ 
+            title: 'Cámara',
+            headerShown: true,
+          }} 
+        />
+        <Stack.Screen 
+          name="gallery" 
+          options={{ 
+            title: 'Galería',
+            headerShown: true,
+          }} 
+        />
       </Stack>
     </GestureHandlerRootView>
   );
