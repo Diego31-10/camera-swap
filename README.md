@@ -1,53 +1,100 @@
-> Edited for use in IDX on 07/09/12
+# 📸 SwapCamera (Snap & Swipe)
 
-# Welcome to your Expo app 👋
+Aplicación móvil desarrollada con **React Native + Expo** que permite capturar fotografías y decidir acciones mediante **gestos de deslizamiento (swipe)**, enfocada en la experiencia táctil y una arquitectura limpia.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Este proyecto fue desarrollado como **evaluación académica**, siguiendo buenas prácticas de organización, modularidad y control de versiones.
 
-## Get started
+---
 
-#### Android
+## 🎯 Objetivo del Proyecto
 
-Android previews are defined as a `workspace.onStart` hook and started as a vscode task when the workspace is opened/started.
+El objetivo principal de **SwapCamera** es permitir al usuario:
 
-Note, if you can't find the task, either:
-- Rebuild the environment (using command palette: `IDX: Rebuild Environment`), or
-- Run `npm run android -- --tunnel` command manually run android and see the output in your terminal. The device should pick up this new command and switch to start displaying the output from it.
+- Capturar fotografías utilizando la cámara del dispositivo.
+- Interactuar con las imágenes mediante gestos (swipe).
+- Decidir acciones según el gesto:
+  - 👉 **Swipe a la derecha** → Guardar imagen.
+  - 👈 **Swipe a la izquierda** → Descartar imagen.
+- Visualizar las imágenes guardadas en una **galería interna**.
 
-In the output of this command/task, you'll find options to open the app in a
+La aplicación funciona **sin backend**, utilizando almacenamiento y estado local.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You'll also find options to open the app's developer menu, reload the app, and more.
+## 👤 Rol de Usuario
 
-#### Web
+**Usuario único**
+- Capturar fotos.
+- Aplicar gestos sobre imágenes.
+- Guardar o eliminar imágenes.
+- Navegar entre cámara y galería.
 
-Web previews will be started and managred automatically. Use the toolbar to manually refresh.
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🧱 Arquitectura y Enfoque
 
-## Get a fresh project
+El proyecto sigue una **arquitectura limpia y modular**, separando:
 
-When you're ready, run:
+- UI (componentes visuales)
+- Lógica de negocio
+- Manejo de estado
+- Navegación
 
-```bash
-npm run reset-project
-```
+Se prioriza:
+- Reutilización de componentes
+- Código tipado con TypeScript
+- Claridad y facilidad de mantenimiento
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🧭 Navegación
 
-To learn more about developing your project with Expo, look at the following resources:
+La aplicación utiliza **Expo Router (file-based routing)** con las siguientes pantallas principales:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **Camera** → Captura de imágenes y gestos
+- **Gallery** → Visualización de imágenes guardadas
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 🌀 Interacciones por Gestos
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Implementación con **react-native-gesture-handler**
+- Animaciones fluidas con **react-native-reanimated**
+- Decisión de acción basada en la distancia del gesto
+- Indicadores visuales durante el swipe
+
+---
+
+## 💾 Manejo de Estado y Almacenamiento
+
+- Estado global simple para manejar las imágenes capturadas
+- Almacenamiento local de imágenes usando **expo-file-system**
+- Persistencia de las fotos guardadas entre sesiones
+
+---
+
+## 🎨 UI / UX
+
+- Diseño moderno y limpio
+- Inspiración en **Material / Dracula Theme**
+- Enfoque en experiencia táctil
+- Jerarquía visual clara
+- Uso de iconos con **lucide-react-native**
+- Estilos definidos con **StyleSheet** (sin estilos inline)
+
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+- **React Native**
+- **Expo**
+- **TypeScript**
+- **Expo Router**
+- **Expo Camera**
+- **react-native-gesture-handler**
+- **react-native-reanimated**
+- **expo-file-system**
+- **lucide-react-native**
+- **Git / GitHub**
+
+---
