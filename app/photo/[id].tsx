@@ -4,27 +4,49 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
 import { colors } from '@/lib/ui/colors';
 import { usePhotoStore } from '@/lib/store/PhotoStore';
+import { GallerySwipeNavigation } from '@/components/organisms/GallerySwipeNavigation';
 
 const { width, height } = Dimensions.get('window');
 
 /**
  * Pantalla de detalle de foto
- * Muestra una foto en pantalla completa con opción de eliminar
+ * Muestra una foto en pantalla completa con navegación por gestos
  */
 export default function PhotoDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { photos, removePhoto } = usePhotoStore();
 
-  const photo = photos.find(p => p.id === id);
+  const currentIndex = photos.findIndex(p => p.id === id);
+  const photo = photos[currentIndex];
 
-  if (!photo) {
+  if (!photo || currentIndex === -1) {
     return (
       <View style={styles.container}>
         <StatusBar style="light" />
       </View>
     );
   }
+
+  /**
+   * Navega a la foto anterior
+   */
+  const goToPrevious = () => {
+    if (currentIndex < photos.length - 1) {
+      const previousPhoto = photos[currentIndex + 1];
+      router.setParams({ id: previousPhoto.id });
+    }
+  };
+
+  /**
+   * Navega a la foto siguiente
+   */
+  const goToNext = () => {
+    if (currentIndex > 0) {
+      const nextPhoto = photos[currentIndex - 1];
+      router.setParams({ id: nextPhoto.id });
+    }
+  };
 
   /**
    * Confirma y elimina la foto
@@ -41,7 +63,19 @@ export default function PhotoDetailScreen() {
           onPress: async () => {
             try {
               await removePhoto(photo.id);
-              router.back();
+              
+              // Si hay más fotos, navegar a la siguiente o anterior
+              if (photos.length > 1) {
+                if (currentIndex > 0) {
+                  goToNext();
+                } else if (currentIndex < photos.length - 1) {
+                  goToPrevious();
+                } else {
+                  router.back();
+                }
+              } else {
+                router.back();
+              }
             } catch (error) {
               Alert.alert('Error', 'No se pudo eliminar la foto');
             }
@@ -51,15 +85,19 @@ export default function PhotoDetailScreen() {
     );
   };
 
+  const hasNext = currentIndex > 0;
+  const hasPrevious = currentIndex < photos.length - 1;
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Imagen en pantalla completa */}
-      <Image 
-        source={{ uri: photo.uri }} 
-        style={styles.image}
-        resizeMode="contain"
+      <GallerySwipeNavigation
+        photoUri={photo.uri}
+        onSwipeLeft={hasNext ? goToNext : undefined}
+        onSwipeRight={hasPrevious ? goToPrevious : undefined}
+        currentIndex={currentIndex}
+        totalPhotos={photos.length}
       />
 
       {/* Botón de eliminar */}
@@ -78,10 +116,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  image: {
-    width,
-    height,
-  },
   deleteButton: {
     position: 'absolute',
     bottom: 40,
@@ -97,5 +131,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    zIndex: 10,
   },
 });

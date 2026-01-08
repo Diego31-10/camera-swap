@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { Camera, FlipHorizontal, X } from 'lucide-react-native';
+import { CameraView, CameraType, FlashMode, useCameraPermissions } from 'expo-camera';
+import { Camera, FlipHorizontal, X, Zap, ZapOff } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/lib/ui/colors';
 import { SwipeablePhoto } from '@/components/organisms/SwipeablePhoto';
@@ -10,12 +10,13 @@ import { usePhotoStore } from '@/lib/store/PhotoStore';
 
 /**
  * Pantalla de Cámara
- * Permite capturar fotografías y usar gestos para decidir qué hacer con ellas
+ * Permite capturar fotografías con control de flash y usar gestos para decidir qué hacer con ellas
  */
 export default function CameraScreen() {
   const router = useRouter();
   const { addPhoto } = usePhotoStore();
   const [facing, setFacing] = useState<CameraType>('back');
+  const [flash, setFlash] = useState<FlashMode>('off');
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -57,6 +58,30 @@ export default function CameraScreen() {
    */
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
+  };
+
+  /**
+   * Cicla entre los modos de flash: off -> on -> auto -> off
+   */
+  const toggleFlash = () => {
+    setFlash(current => {
+      if (current === 'off') return 'on';
+      if (current === 'on') return 'auto';
+      return 'off';
+    });
+  };
+
+  /**
+   * Obtiene el ícono y color según el modo de flash
+   */
+  const getFlashIcon = () => {
+    if (flash === 'off') {
+      return { Icon: ZapOff, color: colors.comment };
+    }
+    if (flash === 'on') {
+      return { Icon: Zap, color: colors.yellow };
+    }
+    return { Icon: Zap, color: colors.cyan }; // auto
   };
 
   /**
@@ -128,6 +153,8 @@ export default function CameraScreen() {
     setCapturedPhoto(null);
   };
 
+  const { Icon: FlashIcon, color: flashColor } = getFlashIcon();
+
   // Si hay una foto capturada, mostrar preview con gestos
   if (capturedPhoto) {
     return (
@@ -169,15 +196,30 @@ export default function CameraScreen() {
       <CameraView 
         style={styles.camera}
         facing={facing}
+        flash={flash}
         ref={cameraRef}
       >
         {/* Overlay con controles */}
         <View style={styles.cameraOverlay}>
           
-          {/* Botón para cambiar cámara */}
+          {/* Controles superiores */}
           <View style={styles.topControls}>
+            {/* Botón de Flash */}
             <Pressable 
-              style={styles.flipButton}
+              style={styles.controlButton}
+              onPress={toggleFlash}
+            >
+              <FlashIcon color={flashColor} size={28} strokeWidth={2.5} />
+              {flash === 'auto' && (
+                <Text style={styles.flashBadge}>A</Text>
+              )}
+            </Pressable>
+
+            <View style={{ flex: 1 }} />
+
+            {/* Botón para cambiar cámara */}
+            <Pressable 
+              style={styles.controlButton}
               onPress={toggleCameraFacing}
             >
               <FlipHorizontal color={colors.foreground} size={28} strokeWidth={2.5} />
@@ -266,15 +308,31 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  flipButton: {
+  controlButton: {
     width: 50,
     height: 50,
     borderRadius: 25,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  flashBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    backgroundColor: colors.cyan,
+    color: colors.background,
+    fontSize: 10,
+    fontWeight: 'bold',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    textAlign: 'center',
+    lineHeight: 16,
   },
   bottomControls: {
     paddingBottom: 50,
