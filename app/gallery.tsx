@@ -1,32 +1,102 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Dimensions, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Images } from 'lucide-react-native';
+import { Images, Camera } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Image } from 'react-native';
+import { colors } from '@/lib/ui/colors';
+import { usePhotoStore } from '@/lib/store/PhotoStore';
+import { useState } from 'react';
+
+const { width } = Dimensions.get('window');
+const ITEM_SIZE = (width - 48) / 3; // 3 columnas con gaps
 
 /**
  * Pantalla de Galería
- * En la Fase 4 se implementará la funcionalidad completa
+ * Muestra todas las fotos guardadas en un grid
  */
 export default function GalleryScreen() {
+  const router = useRouter();
+  const { photos, isLoading, loadPhotos } = usePhotoStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  /**
+   * Maneja el refresh manual
+   */
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadPhotos();
+    setRefreshing(false);
+  };
+
+  /**
+   * Navega a la vista detallada de una foto
+   */
+  const openPhoto = (id: string) => {
+    router.push(`/photo/${id}`);
+  };
+
+  // Si no hay fotos
+  if (!isLoading && photos.length === 0) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        
+        <View style={styles.emptyContainer}>
+          <Images color={colors.comment} size={80} strokeWidth={1.5} />
+          <Text style={styles.emptyTitle}>No hay fotos guardadas</Text>
+          <Text style={styles.emptyMessage}>
+            Las fotos que guardes con swipe derecha{'\n'}
+            aparecerán aquí
+          </Text>
+          
+          <Pressable 
+            style={styles.cameraButton}
+            onPress={() => router.push('/camera')}
+          >
+            <Camera color={colors.background} size={24} strokeWidth={2.5} />
+            <Text style={styles.cameraButtonText}>Abrir Cámara</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      <View style={styles.content}>
-        <Images color="#8be9fd" size={80} strokeWidth={1.5} />
-        <Text style={styles.title}>Galería</Text>
-        <Text style={styles.message}>
-          La galería de imágenes guardadas{'\n'}
-          se implementará en la Fase 4
+      {/* Header con contador */}
+      <View style={styles.header}>
+        <Text style={styles.headerText}>
+          {photos.length} {photos.length === 1 ? 'foto' : 'fotos'}
         </Text>
       </View>
 
-      <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>Próximamente:</Text>
-        <Text style={styles.infoItem}>• Visualización de imágenes guardadas</Text>
-        <Text style={styles.infoItem}>• Grid de fotos</Text>
-        <Text style={styles.infoItem}>• Vista detallada de cada imagen</Text>
-        <Text style={styles.infoItem}>• Eliminación de imágenes</Text>
-      </View>
+      {/* Grid de fotos */}
+      <FlatList
+        data={photos}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        contentContainerStyle={styles.grid}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.green}
+          />
+        }
+        renderItem={({ item }) => (
+          <Pressable 
+            style={styles.gridItem}
+            onPress={() => openPhoto(item.id)}
+          >
+            <Image 
+              source={{ uri: item.uri }} 
+              style={styles.thumbnail}
+            />
+          </Pressable>
+        )}
+      />
     </View>
   );
 }
@@ -34,45 +104,73 @@ export default function GalleryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#282a36',
-    padding: 20,
-    justifyContent: 'center',
+    backgroundColor: colors.background,
   },
-  content: {
+  
+  // Empty state
+  emptyContainer: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
     gap: 16,
   },
-  title: {
-    fontSize: 32,
+  emptyTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#8be9fd',
+    color: colors.foreground,
     marginTop: 20,
   },
-  message: {
+  emptyMessage: {
     fontSize: 16,
-    color: '#f8f8f2',
+    color: colors.foreground,
     textAlign: 'center',
-    lineHeight: 24,
     opacity: 0.7,
+    lineHeight: 24,
   },
-  infoBox: {
-    backgroundColor: '#44475a',
-    padding: 20,
+  cameraButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.green,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderRadius: 12,
-    marginBottom: 20,
+    marginTop: 20,
   },
-  infoTitle: {
+  cameraButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#bd93f9',
-    marginBottom: 12,
+    color: colors.background,
   },
-  infoItem: {
-    fontSize: 14,
-    color: '#f8f8f2',
-    marginBottom: 8,
-    opacity: 0.8,
+
+  // Header
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.selection,
+  },
+  headerText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.comment,
+  },
+
+  // Grid
+  grid: {
+    padding: 12,
+  },
+  gridItem: {
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
+    margin: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: colors.backgroundLight,
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
 });

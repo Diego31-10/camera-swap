@@ -6,6 +6,7 @@ import { Camera, FlipHorizontal, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/lib/ui/colors';
 import { SwipeablePhoto } from '@/components/organisms/SwipeablePhoto';
+import { usePhotoStore } from '@/lib/store/PhotoStore';
 
 /**
  * Pantalla de Cámara
@@ -13,9 +14,11 @@ import { SwipeablePhoto } from '@/components/organisms/SwipeablePhoto';
  */
 export default function CameraScreen() {
   const router = useRouter();
+  const { addPhoto } = usePhotoStore();
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   // Si los permisos aún están cargando
@@ -80,15 +83,34 @@ export default function CameraScreen() {
   /**
    * Maneja el guardado de la foto (swipe derecha)
    */
-  const handleSave = () => {
-    if (capturedPhoto) {
-      // En la Fase 4 se guardará en el store
-      console.log('Foto guardada:', capturedPhoto);
+  const handleSave = async () => {
+    if (!capturedPhoto || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      await addPhoto(capturedPhoto);
       Alert.alert(
-        'Foto Guardada',
-        'La foto se guardará en la galería en la Fase 4',
-        [{ text: 'OK', onPress: () => setCapturedPhoto(null) }]
+        '¡Foto Guardada!',
+        'La foto se ha guardado en tu galería',
+        [
+          { 
+            text: 'Ver Galería', 
+            onPress: () => {
+              setCapturedPhoto(null);
+              router.push('/gallery');
+            }
+          },
+          { 
+            text: 'Tomar Otra', 
+            onPress: () => setCapturedPhoto(null)
+          }
+        ]
       );
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo guardar la foto');
+      console.error(error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -116,15 +138,24 @@ export default function CameraScreen() {
           photoUri={capturedPhoto}
           onSwipeLeft={handleDiscard}
           onSwipeRight={handleSave}
+          disabled={isSaving}
         />
 
         {/* Botón para cerrar */}
         <Pressable 
           style={styles.closeButton}
           onPress={closePreview}
+          disabled={isSaving}
         >
           <X color={colors.foreground} size={24} strokeWidth={2.5} />
         </Pressable>
+
+        {/* Indicador de guardado */}
+        {isSaving && (
+          <View style={styles.savingOverlay}>
+            <Text style={styles.savingText}>Guardando...</Text>
+          </View>
+        )}
       </View>
     );
   }
@@ -291,5 +322,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
+  },
+
+  // Overlay de guardado
+  savingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  savingText: {
+    color: colors.foreground,
+    fontSize: 18,
+    fontWeight: '600',
   },
 });

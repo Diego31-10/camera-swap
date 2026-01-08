@@ -12,12 +12,13 @@ import { colors } from '@/lib/ui/colors';
 import { SwipeIndicators } from '@/components/molecules/SwipeIndicators';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3; // 30% del ancho de pantalla
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 interface SwipeablePhotoProps {
   photoUri: string;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
+  disabled?: boolean;
 }
 
 /**
@@ -28,8 +29,8 @@ export const SwipeablePhoto = ({
   photoUri,
   onSwipeLeft,
   onSwipeRight,
+  disabled = false,
 }: SwipeablePhotoProps) => {
-  // Valores compartidos para animaciones
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
@@ -37,10 +38,10 @@ export const SwipeablePhoto = ({
    * Gesto de Pan (arrastre)
    */
   const panGesture = Gesture.Pan()
+    .enabled(!disabled)
     .onUpdate((event) => {
-      // Actualizar posición según el gesto
       translateX.value = event.translationX;
-      translateY.value = event.translationY * 0.3; // Menor movimiento vertical
+      translateY.value = event.translationY * 0.3;
     })
     .onEnd((event) => {
       const { translationX, velocityX } = event;
@@ -70,14 +71,12 @@ export const SwipeablePhoto = ({
    * Estilo animado de la imagen
    */
   const animatedStyle = useAnimatedStyle(() => {
-    // Rotación basada en la posición X
     const rotation = interpolate(
       translateX.value,
       [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
       [-15, 0, 15]
     );
 
-    // Opacidad basada en la distancia
     const opacity = interpolate(
       Math.abs(translateX.value),
       [0, SWIPE_THRESHOLD],
@@ -94,25 +93,12 @@ export const SwipeablePhoto = ({
     };
   });
 
-  /**
-   * Progreso del swipe para los indicadores
-   */
-  const swipeProgress = useSharedValue(0);
-
-  // Calcular progreso del swipe
-  const progressStyle = useAnimatedStyle(() => {
-    swipeProgress.value = translateX.value / SWIPE_THRESHOLD;
-    return {};
-  });
-
   return (
     <View style={styles.container}>
-      {/* Indicadores de swipe */}
       <SwipeIndicators translateX={translateX} threshold={SWIPE_THRESHOLD} />
 
-      {/* Foto con gesto */}
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.photoContainer, animatedStyle, progressStyle]}>
+        <Animated.View style={[styles.photoContainer, animatedStyle]}>
           <Image source={{ uri: photoUri }} style={styles.photo} />
         </Animated.View>
       </GestureDetector>
@@ -141,6 +127,6 @@ const styles = StyleSheet.create({
   photo: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
-  },
+    resizeMode:'cover',
+},
 });
