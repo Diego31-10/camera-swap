@@ -14,3 +14,14 @@ export interface CapturedImage {
   
   // Tipo para las direcciones de swipe
   export type SwipeDirection = 'left' | 'right' | 'none';
+  
+  // Tipo para la información de una foto
+  export interface PhotoInfo {
+    uri: string;
+    width?: number;
+    height?: number;
+    base64?: string;
+  }
+  
+  // Tipo para los permisos de cámara
+  export type CameraPermissionStatus = 'granted' | 'denied' | 'undetermined';
