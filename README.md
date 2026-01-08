@@ -26,13 +26,15 @@ Aplicación móvil desarrollada con **React Native y Expo** que permite capturar
 
 La aplicación fue desarrollada como **proyecto académico**, priorizando una arquitectura limpia, modular y fácil de explicar.
 
-## 🎥 Video explicativo
+## 📽️Video explicativo
 
-<div align="center">
-
-[![YouTube](https://img.shields.io/badge/YouTube-Video-red?style=flat&logo=youtube)]([https://www.youtube.com/watch?v=ABC123XYZ](https://youtube.com/shorts/h8m3-QWQ4fk))
-
-
+<div align="left">
+  <a  target="_blank" href="[https://youtu.be/05l8pKeD7Cg](https://youtube.com/shorts/h8m3-QWQ4fk)" >
+    <img 
+      src="https://img.shields.io/badge/Ver%20video%20en%20YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white"
+      alt="Ver video"
+    />
+  </a>
 </div>
 
 ### 💡 ¿Qué hace especial a SwapCamera?
