@@ -14,19 +14,12 @@ Aplicación móvil desarrollada con **React Native y Expo** que permite capturar
 [![Reanimated](https://img.shields.io/badge/Reanimated-5B2D8B?style=flat)](https://docs.swmansion.com/react-native-reanimated/)
 [![Gesture Handler](https://img.shields.io/badge/Gesture_Handler-3A86FF?style=flat)](https://docs.swmansion.com/react-native-gesture-handler/)
 
-[Características](#-características-principales) • [Gestos](#-interacción-por-gestos) • [Tecnologías](#%EF%B8%8F-tecnologías-utilizadas)  • [Autor](#autor) • 
+[Características](#-características-principales) • [Gestos](#-interacción-por-gestos) • [Tecnologías](#%EF%B8%8F-tecnologías-utilizadas)  • [Autor](#autor) 
 
 </div>
 
 ---
-
-## 📋 Descripción
-
-**SwapCamera (Snap & Swipe)** es una aplicación móvil enfocada en la **experiencia táctil**, que permite capturar imágenes con la cámara del dispositivo y decidir su destino mediante **gestos de deslizamiento**, sin botones innecesarios.
-
-La aplicación fue desarrollada como **proyecto académico**, priorizando una arquitectura limpia, modular y fácil de explicar.
-
-## 📽️Video explicativo
+## 📽️Video Demostrativo
 
 <div align="left">
   <a  target="_blank" href="[https://youtu.be/05l8pKeD7Cg](https://youtube.com/shorts/h8m3-QWQ4fk)" >
@@ -36,6 +29,13 @@ La aplicación fue desarrollada como **proyecto académico**, priorizando una ar
     />
   </a>
 </div>
+
+## 📋 Descripción
+
+**SwapCamera (Snap & Swipe)** es una aplicación móvil enfocada en la **experiencia táctil**, que permite capturar imágenes con la cámara del dispositivo y decidir su destino mediante **gestos de deslizamiento**, sin botones innecesarios.
+
+La aplicación fue desarrollada como **proyecto académico**, priorizando una arquitectura limpia, modular y fácil de explicar.
+
 
 ### 💡 ¿Qué hace especial a SwapCamera?
 
