@@ -3,13 +3,16 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Camera, FlipHorizontal, X } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { colors } from '@/lib/ui/colors';
+import { SwipeablePhoto } from '@/components/organisms/SwipeablePhoto';
 
 /**
  * Pantalla de Cámara
- * Permite capturar fotografías y alternar entre cámaras frontal/trasera
+ * Permite capturar fotografías y usar gestos para decidir qué hacer con ellas
  */
 export default function CameraScreen() {
+  const router = useRouter();
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
@@ -75,43 +78,53 @@ export default function CameraScreen() {
   };
 
   /**
-   * Descarta la foto capturada y regresa a la cámara
+   * Maneja el guardado de la foto (swipe derecha)
    */
-  const discardPhoto = () => {
+  const handleSave = () => {
+    if (capturedPhoto) {
+      // En la Fase 4 se guardará en el store
+      console.log('Foto guardada:', capturedPhoto);
+      Alert.alert(
+        'Foto Guardada',
+        'La foto se guardará en la galería en la Fase 4',
+        [{ text: 'OK', onPress: () => setCapturedPhoto(null) }]
+      );
+    }
+  };
+
+  /**
+   * Maneja el descarte de la foto (swipe izquierda)
+   */
+  const handleDiscard = () => {
     setCapturedPhoto(null);
   };
 
-  // Si hay una foto capturada, mostrar preview
+  /**
+   * Cierra el preview sin hacer nada
+   */
+  const closePreview = () => {
+    setCapturedPhoto(null);
+  };
+
+  // Si hay una foto capturada, mostrar preview con gestos
   if (capturedPhoto) {
     return (
       <View style={styles.container}>
         <StatusBar style="light" />
         
-        {/* Preview de la foto */}
-        <View style={styles.previewContainer}>
-          <img 
-            src={capturedPhoto} 
-            style={styles.previewImage}
-            alt="Foto capturada"
-          />
-        </View>
+        <SwipeablePhoto
+          photoUri={capturedPhoto}
+          onSwipeLeft={handleDiscard}
+          onSwipeRight={handleSave}
+        />
 
-        {/* Botón para descartar y volver */}
+        {/* Botón para cerrar */}
         <Pressable 
           style={styles.closeButton}
-          onPress={discardPhoto}
+          onPress={closePreview}
         >
           <X color={colors.foreground} size={24} strokeWidth={2.5} />
         </Pressable>
-
-        {/* Indicador de siguiente fase */}
-        <View style={styles.gestureHint}>
-          <Text style={styles.gestureHintText}>
-            En la Fase 3 podrás usar gestos para:
-          </Text>
-          <Text style={styles.gestureHintItem}>← Swipe izquierda = Descartar</Text>
-          <Text style={styles.gestureHintItem}>→ Swipe derecha = Guardar</Text>
-        </View>
       </View>
     );
   }
@@ -266,18 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
 
-  // Estilos de preview
-  previewContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'contain',
-  },
+  // Botón de cerrar en preview
   closeButton: {
     position: 'absolute',
     top: 60,
@@ -288,26 +290,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  gestureHint: {
-    position: 'absolute',
-    bottom: 40,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(68, 71, 90, 0.95)',
-    padding: 20,
-    borderRadius: 12,
-    gap: 8,
-  },
-  gestureHintText: {
-    color: colors.purple,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  gestureHintItem: {
-    color: colors.foreground,
-    fontSize: 13,
-    opacity: 0.9,
+    zIndex: 10,
   },
 });
