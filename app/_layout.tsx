@@ -1,24 +1,42 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
+/**
+ * Layout principal de la aplicación
+ * Configura el Stack Navigator y el GestureHandler
+ */
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+    <GestureHandlerRootView style={styles.container}>
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#282a36',
+          },
+          headerTintColor: '#f8f8f2',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          contentStyle: {
+            backgroundColor: '#282a36',
+          },
+        }}
+      >
+        <Stack.Screen 
+          name="index" 
+          options={{ 
+            title: 'SwapCamera',
+            headerShown: true,
+          }} 
+        />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
