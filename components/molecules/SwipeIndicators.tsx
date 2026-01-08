@@ -3,8 +3,10 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   SharedValue,
+  useAnimatedReaction,
+  runOnJS,
 } from 'react-native-reanimated';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics'; // Importante instalar esto
 import { colors } from '@/lib/ui/colors';
 
 interface SwipeIndicatorsProps {
@@ -12,103 +14,75 @@ interface SwipeIndicatorsProps {
   threshold: number;
 }
 
-/**
- * Indicadores visuales del gesto de swipe
- * Muestra flechas que se activan según la dirección del swipe
- */
 export const SwipeIndicators = ({ translateX, threshold }: SwipeIndicatorsProps) => {
-  /**
-   * Estilo animado del indicador izquierdo (descartar)
-   */
-  const leftIndicatorStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      translateX.value,
-      [-threshold, 0],
-      [1, 0]
-    );
+  
+  // Función para vibrar (ejecutada en el hilo de JS)
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
-    const scale = interpolate(
-      translateX.value,
-      [-threshold, 0],
-      [1.2, 0.8]
-    );
+  // Reacción para vibrar cuando el usuario llega al límite
+  useAnimatedReaction(
+    () => translateX.value,
+    (currentValue, previousValue) => {
+      if (!previousValue) return;
+      // Vibra cuando cruza el umbral hacia la derecha o izquierda
+      if (Math.abs(currentValue) >= threshold && Math.abs(previousValue) < threshold) {
+        runOnJS(triggerHaptic)();
+      }
+    }
+  );
 
-    return {
-      opacity,
-      transform: [{ scale }],
-    };
-  });
+  const leftTextStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [-threshold * 0.5, -threshold * 0.2], [1, 0]),
+    transform: [
+      { rotate: '-15deg' },
+      { scale: interpolate(translateX.value, [-threshold, 0], [1.2, 0.8], 'clamp') }
+    ],
+  }));
 
-  /**
-   * Estilo animado del indicador derecho (guardar)
-   */
-  const rightIndicatorStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      translateX.value,
-      [0, threshold],
-      [0, 1]
-    );
-
-    const scale = interpolate(
-      translateX.value,
-      [0, threshold],
-      [0.8, 1.2]
-    );
-
-    return {
-      opacity,
-      transform: [{ scale }],
-    };
-  });
+  const rightTextStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [threshold * 0.2, threshold * 0.5], [0, 1]),
+    transform: [
+      { rotate: '15deg' },
+      { scale: interpolate(translateX.value, [0, threshold], [0.8, 1.2], 'clamp') }
+    ],
+  }));
 
   return (
-    <>
-      {/* Indicador Izquierdo - Descartar */}
-      <Animated.View style={[styles.indicator, styles.leftIndicator, leftIndicatorStyle]}>
-        <View style={styles.discardCircle}>
-          <ChevronLeft color={colors.foreground} size={60} strokeWidth={3} />
-        </View>
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Animated.View style={[styles.textBadge, styles.leftBadge, leftTextStyle]}>
+        <Animated.Text style={[styles.badgeText, { color: colors.red }]}>ELIMINAR</Animated.Text>
       </Animated.View>
 
-      {/* Indicador Derecho - Guardar */}
-      <Animated.View style={[styles.indicator, styles.rightIndicator, rightIndicatorStyle]}>
-        <View style={styles.saveCircle}>
-          <ChevronRight color={colors.foreground} size={60} strokeWidth={3} />
-        </View>
+      <Animated.View style={[styles.textBadge, styles.rightBadge, rightTextStyle]}>
+        <Animated.Text style={[styles.badgeText, { color: colors.green }]}>GUARDAR</Animated.Text>
       </Animated.View>
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  indicator: {
+  textBadge: {
     position: 'absolute',
-    top: '50%',
-    marginTop: -60,
-    zIndex: -1,
+    top: 80, // Ajusta según prefieras
+    borderWidth: 5,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(0,0,0,0.05)', // Un toque de fondo para legibilidad
   },
-  leftIndicator: {
-    left: 40,
+  leftBadge: {
+    right: 30,
+    borderColor: colors.red,
   },
-  rightIndicator: {
-    right: 40,
+  rightBadge: {
+    left: 30,
+    borderColor: colors.green,
   },
-  discardCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.red,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.9,
-  },
-  saveCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.green,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.9,
+  badgeText: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 2,
   },
 });

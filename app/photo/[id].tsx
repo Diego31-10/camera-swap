@@ -1,60 +1,43 @@
-import { View, StyleSheet, Image, Pressable, Alert, Dimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Alert, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Trash2 } from 'lucide-react-native';
+import { Trash2, Heart } from 'lucide-react-native';
 import { colors } from '@/lib/ui/colors';
 import { usePhotoStore } from '@/lib/store/PhotoStore';
 import { GallerySwipeNavigation } from '@/components/organisms/GallerySwipeNavigation';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-/**
- * Pantalla de detalle de foto
- * Muestra una foto en pantalla completa con navegación por gestos
- */
 export default function PhotoDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { photos, removePhoto } = usePhotoStore();
+  const { photos, removePhoto, toggleFavorite } = usePhotoStore();
 
   const currentIndex = photos.findIndex(p => p.id === id);
   const photo = photos[currentIndex];
 
   if (!photo || currentIndex === -1) {
-    return (
-      <View style={styles.container}>
-        <StatusBar style="light" />
-      </View>
-    );
+    return <View style={styles.container}><StatusBar style="light" /></View>;
   }
 
-  /**
-   * Navega a la foto anterior
-   */
-  const goToPrevious = () => {
-    if (currentIndex < photos.length - 1) {
-      const previousPhoto = photos[currentIndex + 1];
-      router.setParams({ id: previousPhoto.id });
-    }
-  };
-
-  /**
-   * Navega a la foto siguiente
-   */
+  // Navegar a la foto Siguiente (más antigua en tu array)
   const goToNext = () => {
-    if (currentIndex > 0) {
-      const nextPhoto = photos[currentIndex - 1];
-      router.setParams({ id: nextPhoto.id });
+    if (currentIndex < photos.length - 1) {
+      router.setParams({ id: photos[currentIndex + 1].id });
     }
   };
 
-  /**
-   * Confirma y elimina la foto
-   */
+  // Navegar a la foto Anterior (más reciente en tu array)
+  const goToPrevious = () => {
+    if (currentIndex > 0) {
+      router.setParams({ id: photos[currentIndex - 1].id });
+    }
+  };
+
   const handleDelete = () => {
     Alert.alert(
       'Eliminar foto',
-      '¿Estás seguro de que quieres eliminar esta foto?',
+      '¿Estás seguro?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -62,22 +45,15 @@ export default function PhotoDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              const nextId = photos[currentIndex + 1]?.id || photos[currentIndex - 1]?.id;
               await removePhoto(photo.id);
-              
-              // Si hay más fotos, navegar a la siguiente o anterior
-              if (photos.length > 1) {
-                if (currentIndex > 0) {
-                  goToNext();
-                } else if (currentIndex < photos.length - 1) {
-                  goToPrevious();
-                } else {
-                  router.back();
-                }
+              if (nextId) {
+                router.setParams({ id: nextId });
               } else {
                 router.back();
               }
             } catch (error) {
-              Alert.alert('Error', 'No se pudo eliminar la foto');
+              Alert.alert('Error', 'No se pudo eliminar');
             }
           },
         },
@@ -85,28 +61,39 @@ export default function PhotoDetailScreen() {
     );
   };
 
-  const hasNext = currentIndex > 0;
-  const hasPrevious = currentIndex < photos.length - 1;
-
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
       <GallerySwipeNavigation
         photoUri={photo.uri}
-        onSwipeLeft={hasNext ? goToNext : undefined}
-        onSwipeRight={hasPrevious ? goToPrevious : undefined}
+        onSwipeLeft={currentIndex < photos.length - 1 ? goToNext : undefined}
+        onSwipeRight={currentIndex > 0 ? goToPrevious : undefined}
         currentIndex={currentIndex}
         totalPhotos={photos.length}
       />
 
-      {/* Botón de eliminar */}
-      <Pressable 
-        style={styles.deleteButton}
-        onPress={handleDelete}
-      >
-        <Trash2 color={colors.foreground} size={24} strokeWidth={2.5} />
-      </Pressable>
+      {/* Botones de acción inferiores */}
+      <View style={styles.footer}>
+        <Pressable 
+          style={[styles.actionButton, styles.favoriteBtn]} 
+          onPress={() => toggleFavorite(photo.id)}
+        >
+          <Heart 
+            color={photo.isFavorite ? colors.red : colors.foreground} 
+            fill={photo.isFavorite ? colors.red : 'transparent'} 
+            size={28} 
+            strokeWidth={2}
+          />
+        </Pressable>
+
+        <Pressable 
+          style={[styles.actionButton, styles.deleteBtn]} 
+          onPress={handleDelete}
+        >
+          <Trash2 color={colors.foreground} size={28} strokeWidth={2} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -116,21 +103,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  deleteButton: {
+  footer: {
     position: 'absolute',
-    bottom: 40,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.red,
+    bottom: 50,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 30,
+    zIndex: 20,
+  },
+  actionButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    zIndex: 10,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+  },
+  favoriteBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  deleteBtn: {
+    backgroundColor: colors.red,
   },
 });

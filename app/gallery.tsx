@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, FlatList, Pressable, Dimensions, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Images, Camera } from 'lucide-react-native';
+import { Images, Camera, Heart } from 'lucide-react-native'; // Añadimos Heart
 import { useRouter } from 'expo-router';
 import { Image } from 'react-native';
 import { colors } from '@/lib/ui/colors';
@@ -8,39 +8,27 @@ import { usePhotoStore } from '@/lib/store/PhotoStore';
 import { useState } from 'react';
 
 const { width } = Dimensions.get('window');
-const ITEM_SIZE = (width - 48) / 3; // 3 columnas con gaps
+const ITEM_SIZE = (width - 48) / 3;
 
-/**
- * Pantalla de Galería
- * Muestra todas las fotos guardadas en un grid
- */
 export default function GalleryScreen() {
   const router = useRouter();
   const { photos, isLoading, loadPhotos } = usePhotoStore();
   const [refreshing, setRefreshing] = useState(false);
 
-  /**
-   * Maneja el refresh manual
-   */
   const onRefresh = async () => {
     setRefreshing(true);
     await loadPhotos();
     setRefreshing(false);
   };
 
-  /**
-   * Navega a la vista detallada de una foto
-   */
   const openPhoto = (id: string) => {
     router.push(`/photo/${id}`);
   };
 
-  // Si no hay fotos
   if (!isLoading && photos.length === 0) {
     return (
       <View style={styles.container}>
         <StatusBar style="light" />
-        
         <View style={styles.emptyContainer}>
           <Images color={colors.comment} size={80} strokeWidth={1.5} />
           <Text style={styles.emptyTitle}>No hay fotos guardadas</Text>
@@ -48,7 +36,6 @@ export default function GalleryScreen() {
             Las fotos que guardes con swipe derecha{'\n'}
             aparecerán aquí
           </Text>
-          
           <Pressable 
             style={styles.cameraButton}
             onPress={() => router.push('/camera')}
@@ -65,14 +52,12 @@ export default function GalleryScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header con contador */}
       <View style={styles.header}>
         <Text style={styles.headerText}>
           {photos.length} {photos.length === 1 ? 'foto' : 'fotos'}
         </Text>
       </View>
 
-      {/* Grid de fotos */}
       <FlatList
         data={photos}
         keyExtractor={(item) => item.id}
@@ -87,13 +72,23 @@ export default function GalleryScreen() {
         }
         renderItem={({ item }) => (
           <Pressable 
-            style={styles.gridItem}
+            style={({ pressed }) => [
+              styles.gridItem,
+              { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] }
+            ]}
             onPress={() => openPhoto(item.id)}
           >
             <Image 
               source={{ uri: item.uri }} 
               style={styles.thumbnail}
             />
+            
+            {/* Indicador de Favorito */}
+            {item.isFavorite && (
+              <View style={styles.favoriteBadge}>
+                <Heart color={colors.red} fill={colors.red} size={12} />
+              </View>
+            )}
           </Pressable>
         )}
       />
@@ -106,8 +101,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  
-  // Empty state
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -143,8 +136,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.background,
   },
-
-  // Header
   header: {
     padding: 16,
     borderBottomWidth: 1,
@@ -155,8 +146,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.comment,
   },
-
-  // Grid
   grid: {
     padding: 12,
   },
@@ -164,13 +153,23 @@ const styles = StyleSheet.create({
     width: ITEM_SIZE,
     height: ITEM_SIZE,
     margin: 4,
-    borderRadius: 8,
+    borderRadius: 12, // Un poco más redondeado se ve más moderno
     overflow: 'hidden',
     backgroundColor: colors.backgroundLight,
+    position: 'relative', // Necesario para posicionar el corazón
   },
   thumbnail: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  favoriteBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    padding: 4,
+    borderRadius: 10,
+    backdropFilter: 'blur(4px)', // Si usas Expo, esto da un toque pro
   },
 });

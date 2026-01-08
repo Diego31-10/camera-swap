@@ -168,14 +168,6 @@ export default function CameraScreen() {
           disabled={isSaving}
         />
 
-        {/* Botón para cerrar */}
-        <Pressable 
-          style={styles.closeButton}
-          onPress={closePreview}
-          disabled={isSaving}
-        >
-          <X color={colors.foreground} size={24} strokeWidth={2.5} />
-        </Pressable>
 
         {/* Indicador de guardado */}
         {isSaving && (
@@ -366,20 +358,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
-  },
-
-  // Botón de cerrar en preview
-  closeButton: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
   },
 
   // Overlay de guardado

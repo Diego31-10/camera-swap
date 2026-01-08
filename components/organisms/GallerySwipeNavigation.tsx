@@ -7,25 +7,22 @@ import Animated, {
   withTiming,
   runOnJS,
   interpolate,
+  useAnimatedReaction,
 } from 'react-native-reanimated';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics'; // Asegúrate de instalar expo-haptics
 import { colors } from '@/lib/ui/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25; // 25% para navegación
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 interface GallerySwipeNavigationProps {
   photoUri: string;
-  onSwipeLeft?: () => void;
-  onSwipeRight?: () => void;
+  onSwipeLeft?: () => void;  // Siguiente
+  onSwipeRight?: () => void; // Anterior
   currentIndex: number;
   totalPhotos: number;
 }
 
-/**
- * Componente de navegación con gestos para la galería
- * Permite navegar entre fotos con swipe horizontal
- */
 export const GallerySwipeNavigation = ({
   photoUri,
   onSwipeLeft,
@@ -36,194 +33,82 @@ export const GallerySwipeNavigation = ({
   const translateX = useSharedValue(0);
   const scale = useSharedValue(1);
 
-  /**
-   * Gesto de Pan para navegación
-   */
+  // Función para vibrar
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  // Vibra cuando el usuario desliza lo suficiente para cambiar de foto
+  useAnimatedReaction(
+    () => translateX.value,
+    (val, prev) => {
+      if (prev && Math.abs(val) >= SWIPE_THRESHOLD && Math.abs(prev) < SWIPE_THRESHOLD) {
+        runOnJS(triggerHaptic)();
+      }
+    }
+  );
+
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
       translateX.value = event.translationX;
-      // Efecto de escala sutil durante el gesto
-      const scaleValue = 1 - Math.abs(event.translationX) / SCREEN_WIDTH * 0.1;
-      scale.value = Math.max(0.9, scaleValue);
+      scale.value = interpolate(Math.abs(event.translationX), [0, SCREEN_WIDTH], [1, 0.9]);
     })
     .onEnd((event) => {
       const { translationX, velocityX } = event;
 
-      // Swipe a la izquierda (foto siguiente)
+      // LÓGICA CORREGIDA: 
+      // Deslizar hacia la IZQUIERDA (x negativo) -> Siguiente foto
       if ((translationX < -SWIPE_THRESHOLD || velocityX < -500) && onSwipeLeft) {
-        translateX.value = withTiming(-SCREEN_WIDTH, { duration: 250 }, () => {
+        translateX.value = withTiming(-SCREEN_WIDTH, { duration: 200 }, () => {
           runOnJS(onSwipeLeft)();
-          translateX.value = 0;
-          scale.value = 1;
+          translateX.value = SCREEN_WIDTH; // Aparece desde el otro lado
+          translateX.value = withSpring(0);
         });
-      }
-      // Swipe a la derecha (foto anterior)
+      } 
+      // Deslizar hacia la DERECHA (x positivo) -> Foto anterior
       else if ((translationX > SWIPE_THRESHOLD || velocityX > 500) && onSwipeRight) {
-        translateX.value = withTiming(SCREEN_WIDTH, { duration: 250 }, () => {
+        translateX.value = withTiming(SCREEN_WIDTH, { duration: 200 }, () => {
           runOnJS(onSwipeRight)();
-          translateX.value = 0;
-          scale.value = 1;
+          translateX.value = -SCREEN_WIDTH;
+          translateX.value = withSpring(0);
         });
-      }
-      // Regresar a posición original
-      else {
-        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
-        scale.value = withSpring(1, { damping: 20, stiffness: 200 });
+      } else {
+        translateX.value = withSpring(0);
+        scale.value = withSpring(1);
       }
     });
 
-  /**
-   * Estilo animado de la imagen
-   */
-  const animatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      Math.abs(translateX.value),
-      [0, SWIPE_THRESHOLD * 2],
-      [1, 0.3]
-    );
-
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { scale: scale.value },
-      ],
-      opacity,
-    };
-  });
-
-  /**
-   * Indicador izquierdo (foto anterior)
-   */
-  const leftIndicatorStyle = useAnimatedStyle(() => {
-    const opacity = onSwipeRight ? interpolate(
-      translateX.value,
-      [0, SWIPE_THRESHOLD],
-      [0, 1]
-    ) : 0;
-
-    const scale = interpolate(
-      translateX.value,
-      [0, SWIPE_THRESHOLD],
-      [0.8, 1.2]
-    );
-
-    return {
-      opacity,
-      transform: [{ scale }],
-    };
-  });
-
-  /**
-   * Indicador derecho (foto siguiente)
-   */
-  const rightIndicatorStyle = useAnimatedStyle(() => {
-    const opacity = onSwipeLeft ? interpolate(
-      translateX.value,
-      [-SWIPE_THRESHOLD, 0],
-      [1, 0]
-    ) : 0;
-
-    const scale = interpolate(
-      translateX.value,
-      [-SWIPE_THRESHOLD, 0],
-      [1.2, 0.8]
-    );
-
-    return {
-      opacity,
-      transform: [{ scale }],
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }, { scale: scale.value }],
+  }));
 
   return (
     <View style={styles.container}>
-      {/* Indicador Izquierdo - Foto Anterior */}
-      {onSwipeRight && (
-        <Animated.View style={[styles.indicator, styles.leftIndicator, leftIndicatorStyle]}>
-          <View style={styles.indicatorCircle}>
-            <ChevronLeft color={colors.foreground} size={40} strokeWidth={3} />
-          </View>
-        </Animated.View>
-      )}
-
-      {/* Indicador Derecho - Foto Siguiente */}
-      {onSwipeLeft && (
-        <Animated.View style={[styles.indicator, styles.rightIndicator, rightIndicatorStyle]}>
-          <View style={styles.indicatorCircle}>
-            <ChevronRight color={colors.foreground} size={40} strokeWidth={3} />
-          </View>
-        </Animated.View>
-      )}
-
-      {/* Imagen con gesto */}
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[styles.imageContainer, animatedStyle]}>
-          <Image 
-            source={{ uri: photoUri }} 
-            style={styles.image}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: photoUri }} style={styles.image} resizeMode="contain" />
         </Animated.View>
       </GestureDetector>
 
-      {/* Contador de fotos */}
       <View style={styles.counter}>
-        <Text style={styles.counterText}>
-          {currentIndex + 1} / {totalPhotos}
-        </Text>
+        <Text style={styles.counterText}>{currentIndex + 1} / {totalPhotos}</Text>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  indicator: {
-    position: 'absolute',
-    top: '50%',
-    marginTop: -40,
-    zIndex: 1,
-  },
-  leftIndicator: {
-    left: 30,
-  },
-  rightIndicator: {
-    right: 30,
-  },
-  indicatorCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.cyan,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.9,
-  },
+  container: { flex: 1, backgroundColor: colors.background, justifyContent: 'center' },
+  imageContainer: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT },
+  image: { width: '100%', height: '100%' },
   counter: {
     position: 'absolute',
-    top: 20,
+    bottom: 100, // Subido para dejar espacio a los botones de abajo
     alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
   },
-  counterText: {
-    color: colors.foreground,
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  counterText: { color: colors.foreground, fontSize: 12, fontWeight: '700' },
 });
